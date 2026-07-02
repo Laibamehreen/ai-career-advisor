@@ -1,0 +1,311 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                  String               @id @default(uuid())
+  name                String?
+  email               String               @unique
+  password            String
+  role                String               @default("USER") // USER, ADMIN
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  profile             Profile?
+  assessmentResponses AssessmentResponse[]
+  roadmaps            Roadmap[]
+  progress            UserProgress[]
+  savedCareers        SavedCareer[]
+  resumeAnalyses      ResumeAnalysis[]
+  goals               Goal[]
+  badges              UserBadge[]
+  resumes             Resume[]
+  coverLetters        CoverLetter[]
+  interviews          MockInterview[]
+  learningPlans       LearningPlan[]
+  posts               CommunityPost[]
+  comments            CommunityComment[]
+  auditLogs           AuditLog[]
+}
+
+model Profile {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interests           String   @default("[]") // JSON string of interests
+  skills              String   @default("[]") // JSON string of current skills
+  education           String   @default("")
+  goals               String   @default("")
+  workStyle           String   @default("")
+  academicBackground  String   @default("")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model Career {
+  id                 String        @id @default(uuid())
+  title              String
+  category           String        // Data Science, AI, Cyber, etc.
+  description        String
+  salaryRange        String        // e.g. "$70,000 - $120,000"
+  growthOpportunities String
+  jobDemand          String        // High, Medium, Low
+  overallScore       Float         @default(0.0)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  skills             CareerSkill[]
+  roadmaps           Roadmap[]
+  savedBy            SavedCareer[]
+}
+
+model Skill {
+  id                String             @id @default(uuid())
+  name              String             @unique
+  category          String
+  description       String
+  careers           CareerSkill[]
+  learningResources LearningResource[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+}
+
+model CareerSkill {
+  id         String   @id @default(uuid())
+  careerId   String
+  skillId    String
+  importance String   @default("Core") // Core, Secondary
+  career     Career   @relation(fields: [careerId], references: [id], onDelete: Cascade)
+  skill      Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([careerId, skillId])
+}
+
+model AssessmentResponse {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers   String   // JSON string of answers
+  result    String   // JSON string of recommended careers & reasoning
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Roadmap {
+  id        String   @id @default(uuid())
+  careerId  String
+  userId    String
+  career    Career   @relation(fields: [careerId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stages    String   // JSON string of stages: beginner, intermediate, advanced details
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LearningResource {
+  id          String         @id @default(uuid())
+  title       String
+  type        String         // Course, Book, Certification, Tutorial
+  url         String
+  skillId     String
+  skill       Skill          @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  difficulty  String         // Beginner, Intermediate, Advanced
+  description String
+  progress    UserProgress[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model UserProgress {
+  id         String           @id @default(uuid())
+  userId     String
+  resourceId String
+  completed  Boolean          @default(false)
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resource   LearningResource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  updatedAt  DateTime         @updatedAt
+
+  @@unique([userId, resourceId])
+}
+
+model SavedCareer {
+  id        String   @id @default(uuid())
+  userId    String
+  careerId  String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  career    Career   @relation(fields: [careerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, careerId])
+}
+
+model ResumeAnalysis {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resumeText   String
+  analysis     String   // JSON string of strengths, weaknesses, tips, missing skills
+  jobReadiness String   // JSON string of readiness percentages for matched careers
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Goal {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  targetDate  DateTime
+  status      String   @default("Pending") // Pending, Completed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Badge {
+  id          String      @id @default(uuid())
+  name        String      @unique
+  description String
+  icon        String      // Lucide icon name string
+  users       UserBadge[]
+  createdAt   DateTime    @default(now())
+}
+
+model UserBadge {
+  id       String   @id @default(uuid())
+  userId   String
+  badgeId  String
+  earnedAt DateTime @default(now())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge    Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+}
+
+model Resume {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title        String   @default("My Resume")
+  template     String   @default("professional") // professional, creative, minimal
+  personalInfo String   @default("{}") // JSON string: name, email, phone, website, summary
+  experience   String   @default("[]") // JSON string of work experience list
+  education    String   @default("[]") // JSON string of education list
+  projects     String   @default("[]") // JSON string of projects list
+  skills       String   @default("[]") // JSON string of skills list
+  score        Int      @default(0)
+  feedback     String   @default("{}") // JSON string of AI feedback (missing sections, weak content, suggestions)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model CoverLetter {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobTitle       String
+  companyName    String
+  jobDescription String
+  content        String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model MockInterview {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  careerId       String
+  careerTitle    String
+  mode           String   @default("behavioral") // technical, behavioral
+  questions      String   @default("[]") // JSON string of generated questions and user answers
+  score          Int      @default(0)
+  feedback       String   @default("{}") // JSON string of AI feedback
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model LearningPlan {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  careerId    String
+  careerTitle String
+  duration    String   @default("Weekly") // Weekly, Monthly
+  tasks       String   @default("[]") // JSON string of tasks: { id, title, completed, deadline }
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Certification {
+  id          String   @id @default(uuid())
+  name        String
+  provider    String
+  careerPath  String   // e.g. Cloud Computing, Cyber
+  difficulty  String   // Beginner, Intermediate, Advanced
+  cost        String   @default("Paid") // Paid, Free
+  url         String
+  createdAt   DateTime @default(now())
+}
+
+model Scholarship {
+  id          String   @id @default(uuid())
+  name        String
+  provider    String
+  description String
+  eligibility String
+  deadline    DateTime?
+  amount      String   @default("Varies")
+  url         String
+  careerPath  String   // e.g. Data Science, AI
+  createdAt   DateTime @default(now())
+}
+
+model ProjectRecommendation {
+  id          String   @id @default(uuid())
+  title       String
+  careerPath  String
+  difficulty  String // Beginner, Intermediate, Advanced
+  techStack   String // JSON or comma separated string
+  description String
+  learningOutcomes String
+  estHours    Int
+  createdAt   DateTime @default(now())
+}
+
+model CommunityPost {
+  id         String             @id @default(uuid())
+  userId     String
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title      String
+  content    String
+  category   String             // General, Showcase, Q&A, Feedback
+  careerPath String?            // Group by career path
+  likes      Int                @default(0)
+  comments   CommunityComment[]
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+}
+
+model CommunityComment {
+  id        String        @id @default(uuid())
+  postId    String
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime      @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  details   String
+  ipAddress String?
+  createdAt DateTime @default(now())
+}
+
