@@ -106,7 +106,7 @@ export default function RegisterPage() {
                 <Input
                   id="name"
                   type="text"
-                  placeholder="Alex Mercer"
+
                   value={formData.name}
                   onChange={handleChange}
                   disabled={loading}
@@ -119,7 +119,7 @@ export default function RegisterPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="alex.mercer@student.edu"
+                  placeholder="abc@student.edu"
                   value={formData.email}
                   onChange={handleChange}
                   disabled={loading}

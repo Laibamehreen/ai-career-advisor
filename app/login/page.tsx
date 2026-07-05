@@ -34,7 +34,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
-    
+
     const validation = loginSchema.safeParse(formData);
     if (!validation.success) {
       const fieldErrors: Record<string, string> = {};
@@ -107,7 +107,7 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="alex.mercer@student.edu"
+                  placeholder="abc@gmail.com"
                   value={formData.email}
                   onChange={handleChange}
                   disabled={loading}
@@ -152,12 +152,6 @@ export default function LoginPage() {
           </CardFooter>
         </Card>
 
-        {/* Demo Credentials Tips */}
-        <div className="mt-4 p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10 text-center text-[11px] text-indigo-400">
-          <p className="font-bold mb-1">Demo Credentials Available:</p>
-          <p>Student: <span className="font-mono text-slate-200 bg-slate-900/60 px-1 py-0.5 rounded">student@careeradvisor.com</span> / Password: <span className="font-mono text-slate-200 bg-slate-900/60 px-1 py-0.5 rounded">student123</span></p>
-          <p className="mt-1">Admin: <span className="font-mono text-slate-200 bg-slate-900/60 px-1 py-0.5 rounded">admin@careeradvisor.com</span> / Password: <span className="font-mono text-slate-200 bg-slate-900/60 px-1 py-0.5 rounded">admin123</span></p>
-        </div>
       </div>
     </div>
   );

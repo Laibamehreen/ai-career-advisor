@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { analyzeResumeText } from "@/lib/ai";
+import { analyzeResumeText, analyzeResumeBuilderData } from "@/lib/ai";
 import { awardBadge } from "./auth";
 
 // 1. Submit and Analyze Resume text

@@ -6,6 +6,14 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Seeding database...");
 
+  console.log("Cleaning up existing static database records to prevent duplicates...");
+  await prisma.opportunity.deleteMany();
+  await prisma.learningResource.deleteMany();
+  await prisma.careerSkill.deleteMany();
+  await prisma.career.deleteMany();
+  await prisma.skill.deleteMany();
+  await prisma.badge.deleteMany();
+
   // 1. Create Default Users (Hashed Passwords)
   const salt = await bcrypt.genSalt(10);
   const adminPassword = await bcrypt.hash("admin123", salt);

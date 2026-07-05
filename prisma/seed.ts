@@ -6,6 +6,14 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Seeding database...");
 
+  console.log("Cleaning up existing static database records to prevent duplicates...");
+  await prisma.opportunity.deleteMany();
+  await prisma.learningResource.deleteMany();
+  await prisma.careerSkill.deleteMany();
+  await prisma.career.deleteMany();
+  await prisma.skill.deleteMany();
+  await prisma.badge.deleteMany();
+
   // 1. Create Default Users (Hashed Passwords)
   const salt = await bcrypt.genSalt(10);
   const adminPassword = await bcrypt.hash("admin123", salt);
@@ -330,6 +338,126 @@ async function main() {
     }
   }
   console.log("Created learning resources mapped to skills.");
+
+  // Seeding opportunities
+  console.log("Seeding opportunities...");
+  const opportunitiesData = [
+    {
+      title: "HEC Indigenous Scholarship Phase II",
+      companyProvider: "Higher Education Commission Pakistan",
+      type: "Scholarship",
+      careerPath: "General",
+      location: "Pakistan Only",
+      details: "Fully funded MPhil/PhD local studies with monthly living stipend.",
+      eligibility: "Pakistani citizens, minimum 3.0 CGPA, valid HAT test score.",
+      requiredSkills: JSON.stringify(["Python Programming", "SQL & Databases"]),
+      deadline: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 15),
+      url: "https://www.hec.gov.pk/",
+    },
+    {
+      title: "PEEF Master's Level Scholarship",
+      companyProvider: "Punjab Education Endowment Fund",
+      type: "Scholarship",
+      careerPath: "General",
+      location: "Pakistan Only",
+      details: "Full tuition fee waiver and dynamic boarding stipend for master's programs.",
+      eligibility: "Domicile of Punjab, secure admission in partner universities, household income under 60,000 PKR/month.",
+      requiredSkills: JSON.stringify([]),
+      deadline: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 10),
+      url: "https://www.peef.org.pk/",
+    },
+    {
+      title: "Ehsaas Undergraduate Scholarship Program",
+      companyProvider: "Government of Pakistan",
+      type: "Scholarship",
+      careerPath: "General",
+      location: "Pakistan Only",
+      details: "Covers 100% university tuition fees and provides a 2,000 PKR monthly stipend.",
+      eligibility: "Needy undergraduate students admitted in public universities.",
+      requiredSkills: JSON.stringify([]),
+      deadline: new Date(new Date().getFullYear(), new Date().getMonth() + 2, 1),
+      url: "https://hec.gov.pk/english/services/students/Ehsaas/",
+    },
+    {
+      title: "Fulbright Scholarship Program",
+      companyProvider: "USEFP Pakistan",
+      type: "Scholarship",
+      careerPath: "General",
+      location: "International",
+      details: "Fully funded Master's and PhD programs in the United States, including flight tickets, health insurance, and boarding.",
+      eligibility: "Pakistani citizens residing in Pakistan, strong academic record, GRE General test score.",
+      requiredSkills: JSON.stringify([]),
+      deadline: new Date(new Date().getFullYear(), new Date().getMonth() + 2, 28),
+      url: "https://www.usefp.org/",
+    },
+    {
+      title: "AI/ML Software Intern",
+      companyProvider: "Systems Limited",
+      type: "Internship",
+      careerPath: "Data Science",
+      location: "Lahore (Hybrid)",
+      details: "Work on enterprise-level computer vision models and predictive data analytics queries.",
+      eligibility: "Undergraduate student in CS/SE, basic Python knowledge, understanding of database querying.",
+      requiredSkills: JSON.stringify(["Python Programming", "Machine Learning"]),
+      deadline: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 5),
+      url: "https://www.systemsltd.com/",
+    },
+    {
+      title: "Cybersecurity Analyst Trainee",
+      companyProvider: "Trillium Info Security Systems",
+      type: "Internship",
+      careerPath: "Cybersecurity",
+      location: "Islamabad",
+      details: "Join the Security Operations Center (SOC) team monitoring SIEM alarms and security alerts.",
+      eligibility: "BS in Cybersecurity or Computer Science, familiarity with basic networking protocols.",
+      requiredSkills: JSON.stringify(["Cybersecurity Basics"]),
+      deadline: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 8),
+      url: "https://trilliumis.com/",
+    },
+    {
+      title: "Graduate Trainee Software Engineer",
+      companyProvider: "Afiniti Pakistan",
+      type: "Job",
+      careerPath: "Software Engineering",
+      location: "Lahore",
+      details: "Entry-level full-stack engineer developing predictive routing platforms.",
+      eligibility: "Fresh graduate in CS/SE/EE, proficient in at least one core backend/frontend language.",
+      requiredSkills: JSON.stringify(["React & Next.js", "Node.js & Express"]),
+      deadline: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 20),
+      url: "https://www.afiniti.com/",
+    },
+    {
+      title: "National Tech Hackathon Pakistan",
+      companyProvider: "National Incubator Center (NIC)",
+      type: "TechEvent",
+      careerPath: "Software Engineering",
+      location: "Karachi",
+      details: "Coding hackathon addressing agriculture and green-energy challenges. 500,000 PKR grand prize.",
+      eligibility: "Student teams of 2-4 members.",
+      requiredSkills: JSON.stringify(["React & Next.js", "Python Programming"]),
+      deadline: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 12),
+      url: "https://nicpakistan.pk/",
+    },
+    {
+      title: "Coders Cup Competition",
+      companyProvider: "FAST NUCES Karachi",
+      type: "TechEvent",
+      careerPath: "Software Engineering",
+      location: "Karachi",
+      details: "Speed programming and debugging challenge in C++/Python.",
+      eligibility: "Undergraduate university students.",
+      requiredSkills: JSON.stringify(["Python Programming"]),
+      deadline: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 18),
+      url: "https://khi.fast.edu/",
+    }
+  ];
+
+  for (const o of opportunitiesData) {
+    await prisma.opportunity.create({
+      data: o
+    });
+  }
+  console.log("Seeded opportunities.");
 
   console.log("Database seeded successfully!");
 }

@@ -30,6 +30,8 @@ model User {
   posts               CommunityPost[]
   comments            CommunityComment[]
   auditLogs           AuditLog[]
+  savedOpportunities  UserSavedOpportunity[]
+  applications        OpportunityApplication[]
 }
 
 model Profile {
@@ -308,4 +310,46 @@ model AuditLog {
   ipAddress String?
   createdAt DateTime @default(now())
 }
+
+model Opportunity {
+  id              String   @id @default(uuid())
+  title           String
+  companyProvider String   // HEC, PEEF, Google, Systems Ltd, National Tech Event, etc.
+  type            String   // Scholarship, Internship, Job, TechEvent
+  careerPath      String   // Data Science, Cybersecurity, Software Engineering, etc.
+  location        String   // Remote, Lahore, Karachi, Islamabad, International
+  details         String   // Funding amount, salary range, description
+  eligibility     String   // Eligibility criteria description
+  requiredSkills  String   @default("[]") // JSON string of required skill names
+  deadline        DateTime?
+  url             String
+  createdAt       DateTime @default(now())
+  savedBy         UserSavedOpportunity[]
+  applications    OpportunityApplication[]
+}
+
+model UserSavedOpportunity {
+  id            String      @id @default(uuid())
+  userId        String
+  opportunityId String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
+  @@unique([userId, opportunityId])
+}
+
+model OpportunityApplication {
+  id            String      @id @default(uuid())
+  userId        String
+  opportunityId String
+  status        String      @default("Applied") // Applied, Interviewing, Offered, Rejected
+  notes         String      @default("")
+  appliedAt     DateTime    @default(now())
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, opportunityId])
+}
+
 

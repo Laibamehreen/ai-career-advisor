@@ -240,9 +240,43 @@ export async function generateCareerRoadmap(careerTitle: string, userBackground:
   }
 }
 
+function getMockResumeAnalysis(targetCareers: string[]) {
+  const readiness: Record<string, number> = {};
+  targetCareers.forEach(c => {
+    readiness[c] = Math.floor(Math.random() * 30) + 50; // 50-80%
+  });
+
+  return {
+    analysis: {
+      strengths: [
+        "Strong programming foundation in Python and Javascript.",
+        "Clear experience building academic team projects.",
+        "Clear description of technical stack capabilities."
+      ],
+      weaknesses: [
+        "Lacks professional production experience or internships.",
+        "Does not list cloud deployment or containerization tools.",
+        "No professional certifications or cloud badges."
+      ],
+      improvements: [
+        "Add direct links to deployed GitHub projects or web apps.",
+        "Include a dedicated 'Certifications' section listing relevant cloud/security courses.",
+        "Quantify achievements (e.g. 'Improved efficiency by 20%') instead of just listing duties."
+      ],
+      matchedSkills: ["Python Programming", "React & Next.js", "SQL & Databases"],
+      missingSkills: ["AWS Cloud Infrastructure", "Docker & Containerization", "CI/CD Pipelines"]
+    },
+    readiness
+  };
+}
+
 // 3. Analyze resume PDF text and match against careers
 export async function analyzeResumeText(resumeText: string, targetCareers: string[]) {
   const ai = await getAIService();
+  if (ai.type === "mock") {
+    return getMockResumeAnalysis(targetCareers);
+  }
+
   const prompt = `
     You are a professional HR recruiter and CV analyst. Review the resume content:
     ${resumeText}
@@ -264,42 +298,12 @@ export async function analyzeResumeText(resumeText: string, targetCareers: strin
     }
   `;
 
-  if (ai.type === "mock") {
-    const readiness: Record<string, number> = {};
-    targetCareers.forEach(c => {
-      readiness[c] = Math.floor(Math.random() * 30) + 50; // 50-80%
-    });
-
-    return {
-      analysis: {
-        strengths: [
-          "Strong programming foundation in Python and Javascript.",
-          "Clear experience building academic team projects.",
-          "Clear description of technical stack capabilities."
-        ],
-        weaknesses: [
-          "Lacks professional production experience or internships.",
-          "Does not list cloud deployment or containerization tools.",
-          "No professional certifications or cloud badges."
-        ],
-        improvements: [
-          "Add direct links to deployed GitHub projects or web apps.",
-          "Include a dedicated 'Certifications' section listing relevant cloud/security courses.",
-          "Quantify achievements (e.g. 'Improved efficiency by 20%') instead of just listing duties."
-        ],
-        matchedSkills: ["Python Programming", "React & Next.js", "SQL & Databases"],
-        missingSkills: ["AWS Cloud Infrastructure", "Docker & Containerization", "CI/CD Pipelines"]
-      },
-      readiness
-    };
-  }
-
   try {
     const rawRes = await ai.call(prompt, true);
     return JSON.parse(rawRes);
   } catch (err) {
     console.error("AI Resume analysis failed. Returning mock.", err);
-    return { analysis: {}, readiness: {} };
+    return getMockResumeAnalysis(targetCareers);
   }
 }
 
@@ -316,36 +320,137 @@ export async function generateChatResponse(
     .join("\n");
 
   const prompt = `
-    You are an encouraging, experienced, and professional AI Career Advisor.
-    You are answering a student or fresh graduate seeking career guidance.
-    
+    You are the Master AI Career strategist orchestrating a team of specialized sub-agents:
+    1. Career Expert Agent: Handles recommendations, transitions, salary progression, comparison.
+    2. Learning Expert Agent: Handles study plans, weekly milestones, courseware mapping.
+    3. Resume Expert Agent: Handles CV optimization, ATS keywords, bullet points.
+    4. Interview Expert Agent: Handles mock interview guidance, answer structure, preparation.
+    5. Skills Expert Agent: Handles competency gap analysis, beginner/advanced cataloging.
+
     Here is the student's profile context:
     ${context || "No profile context loaded."}
     
     Here is the previous conversation history:
     ${formattedHistory}
 
-    User's new question: ${newMessage}
+    User's new message: ${newMessage}
 
-    Provide a concise, helpful, and highly actionable response. Format it with markdown list bullets and bold text where appropriate. Keep it under 200 words. Keep recommendations closely aligned to their target career and profile metrics.
+    You must analyze the user message and route the request to the most appropriate sub-agent. Formulate a rich, helpful, markdown-styled response as that agent. Include 2-3 suggested follow-up questions the user might ask.
+    
+    You MUST respond with a JSON object in this exact structure:
+    {
+      "agent": "Name of the routed sub-agent (e.g. Career Expert Agent, Learning Expert Agent, Resume Expert Agent, Interview Expert Agent, Skills Expert Agent)",
+      "reply": "Markdown content reply of the expert sub-agent. Keep it comprehensive but concise (max 200 words). Include lists and bolding.",
+      "followUps": ["Suggested question 1", "Suggested question 2"]
+    }
   `;
 
+  const getMockResponseJSON = (msg: string) => {
+    const text = msg.toLowerCase().trim();
+    
+    let studentMajor = "";
+    let studentGoals = "";
+    if (context) {
+      const majorMatch = context.match(/Major:\s*([^.]+)/);
+      if (majorMatch && majorMatch[1]) studentMajor = majorMatch[1].trim();
+      const goalsMatch = context.match(/Goals:\s*([^.]+)/);
+      if (goalsMatch && goalsMatch[1]) studentGoals = goalsMatch[1].trim();
+    }
+
+    if (text === "hi" || text === "hello" || text === "hey" || text === "greetings") {
+      return {
+        agent: "Career Expert Agent",
+        reply: `Hello! I am your lead **AI Career Strategy Agent**. I orchestrate our specialist sub-agents (Career, Learning, Resume, Interview, and Skills Experts) to guide you. ${
+          studentMajor 
+            ? `I see you have an academic background in **${studentMajor}**.` 
+            : "I am ready to help you plan your career."
+        }\n\nWhat role or technology target are you interested in discussing today?`,
+        followUps: ["Plan my next learning step", "Review my resume score", "Start a mock interview session"]
+      };
+    }
+
+    if (text.includes("how are you") || text.includes("who are you")) {
+      return {
+        agent: "Career Expert Agent",
+        reply: `I am the master coordinator agent for the Career Advisor Ecosystem! ${
+          studentGoals 
+            ? `I'm keeping track of your goal to **${studentGoals}**.` 
+            : ""
+        } I route technical questions to our Learning Expert, resume reviews to our Resume Expert, and interviews to our Coach. Ask me anything to begin!`,
+        followUps: ["Compare Cybersecurity vs AI", "Recommend a project to build"]
+      };
+    }
+    
+    if (text.includes("devops") || text.includes("docker") || text.includes("kubernetes") || text.includes("pipeline") || text.includes("cicd")) {
+      return {
+        agent: "Learning Expert Agent",
+        reply: `For a **DevOps Engineer** path, focus on these core study tracks:\n* **Containerization**: Master **Docker** basics and how to write a Dockerfile.\n* **CI/CD Automation**: Use **GitHub Actions** to compile and test code automatically.\n* **Infrastructure as Code**: Learn **Terraform** to provision cloud servers.\n* **Orchestration**: Dive into **Kubernetes** concepts (Pods, Deployments) to manage scale.`,
+        followUps: ["What Docker project should I build?", "Recommend DevOps certifications"]
+      };
+    }
+
+    if (text.includes("design") || text.includes("ui") || text.includes("ux") || text.includes("figma") || text.includes("wireframe")) {
+      return {
+        agent: "Skills Expert Agent",
+        reply: `To excel as a **UI/UX Designer**, target these verified competencies:\n* **Figma Masterclass**: Focus on variants, components, auto-layout, and interactive prototypes.\n* **User Research**: Conduct heuristic evaluations and build user persona maps.\n* **Grid Systems**: Apply vertical rhythm and responsive columns.\n* **Design-to-Code**: Build atomic design tokens for clean front-end handoff.`,
+        followUps: ["List free UI design courses", "Suggest a capstone design project"]
+      };
+    }
+
+    if (text.includes("ai") || text.includes("machine") || text.includes("deep") || text.includes("python") || text.includes("data") || text.includes("model")) {
+      return {
+        agent: "Learning Expert Agent",
+        reply: `For **Data Science & AI** tracks, I recommend these milestones:\n* **Python Scripting**: NumPy arrays, Pandas analytics, and clean code principles.\n* **Machine Learning**: Learn supervised/unsupervised learning via **scikit-learn**.\n* **Deep Learning**: Train neural networks using **PyTorch** or TensorFlow.\n* **Data Pipelines**: Write advanced **SQL** queries and configure databases.`,
+        followUps: ["Suggest an ML model to build", "What math should I study first?"]
+      };
+    }
+
+    if (text.includes("resume") || text.includes("cv") || text.includes("ats")) {
+      return {
+        agent: "Resume Expert Agent",
+        reply: `Improving your **ATS-friendly Resume** involves these critical edits:\n* **Quantify Impact**: Instead of just listing duties, use metrics (e.g. "improved loading speed by 35%").\n* **Single Column Format**: Avoid multi-column text tables or graphic charts that break parser engines.\n* **Keyword Alignment**: Include specific tools and libraries mentioned in your target job descriptions.\n* **Strong Action Verbs**: Begin bullets with words like *designed*, *orchestrated*, or *optimized*.`,
+        followUps: ["Score my resume", "Optimize experience bullet points"]
+      };
+    }
+
+    if (text.includes("interview") || text.includes("question") || text.includes("behavior") || text.includes("prep")) {
+      return {
+        agent: "Interview Expert Agent",
+        reply: `Preparing for **Technical & Behavioral Interviews** requires these core habits:\n* **Whiteboard Architecture**: Explain system choices (e.g. load balancers, caching, DB replication).\n* **STAR framework**: Structure answers by outlining **S**ituation, **T**ask, **A**ction, and **R**esult.\n* **Algorithm Practice**: Focus on arrays, hashing, and dynamic programming.`,
+        followUps: ["Start mock technical interview", "How do I answer behavioral questions?"]
+      };
+    }
+
+    if (text.includes("react") || text.includes("frontend") || text.includes("js") || text.includes("css") || text.includes("web")) {
+      return {
+        agent: "Learning Expert Agent",
+        reply: `To become a professional **Front-End Developer**, I suggest focusing on:\n* **TypeScript**: Enforce strict compile types inside React parameters.\n* **Tailwind CSS**: Build responsive design systems with minimal stylesheet code.\n* **Zustand**: Manage application state flows dynamically.\n* **Next.js**: Leverage Server Components for fast SEO renders.`,
+        followUps: ["Show Next.js learning resources", "Suggest a frontend project"]
+      };
+    }
+
+    return {
+      agent: "Career Expert Agent",
+      reply: `As your AI Advisor, I see you are exploring career steps${
+        studentMajor ? ` related to **${studentMajor}**` : ""
+      }.\n\nTo bridge your skills gap effectively:\n* **Define a specific role** (like Full Stack Developer or AI Engineer).\n* **Build 2-3 portfolio projects** showing your competence.\n* **Earn industry credentials** (such as AWS Cloud Practitioner).`,
+      followUps: ["Compare careers", "Generate a study roadmap"]
+    };
+  };
+
   if (ai.type === "mock") {
-    return `Hello! As your AI Career Advisor, I think that is a fantastic question. 
-
-    To succeed in this, I recommend taking these three immediate steps:
-    * **Upskill on core frameworks**: Spend 1-2 hours a day building simple projects to cement the basics.
-    * **Review learning roadmaps**: Focus on bridging your skill gaps by taking certified resources (e.g., courses in AWS or Docker).
-    * **Revamp your resume**: Update your project descriptions using action verbs and concrete metrics.
-
-    Let me know if you would like me to detail a learning path or recommend specific courses for this career!`;
+    return JSON.stringify(getMockResponseJSON(newMessage));
   }
 
   try {
-    return await ai.call(prompt, false);
+    const res = await ai.call(prompt, true);
+    if (!res || res.trim().length === 0) throw new Error("Empty response");
+    // Verify it is parseable JSON, otherwise wrap it
+    JSON.parse(res);
+    return res;
   } catch (err) {
-    console.error("AI Chat failed. Returning default message.", err);
-    return "I apologize, but I am currently having difficulty connecting to my advising brain. Let's try again in a moment!";
+    console.error("AI Chat failed. Returning mock fallback:", err);
+    return JSON.stringify(getMockResponseJSON(newMessage));
   }
 }
 
@@ -357,15 +462,19 @@ export async function generateAICoverLetter(jobTitle: string, companyName: strin
   User details: Name: ${userProfile?.name || "Applicant"}, Skills: ${userProfile?.skills || "[]"}, Education: ${userProfile?.education || "N/A"}.
   Make it look extremely polished, professional, and tailored. Return only the cover letter content in markdown format.`;
 
+  const mockLetter = `Dear Hiring Manager at ${companyName || "the Company"},\n\nI am writing to express my enthusiastic interest in the ${jobTitle || "Software Engineer"} position. With a solid foundation in technical problem-solving and application design, I am confident in my ability to contribute meaningfully to your team.\n\nMy background includes building projects, refining skills, and designing robust systems. In reviewing your job description, I noticed a strong emphasis on keywords related to:\n${jobDescription ? `* ${jobDescription.substring(0, 150)}...` : "* Collaborative application design\n* Core technology architecture"}\n\nMy academic background and technical projects align perfectly with these requirements. I am highly motivated to bring my skills to ${companyName || "your team"} and would welcome the opportunity to discuss my qualifications further in an interview.\n\nThank you for your time and consideration.\n\nSincerely,\n${userProfile?.name || "Alex Mercer"}`;
+
   if (ai.type === "mock") {
-    return `Dear Hiring Manager at ${companyName || "the Company"},\n\nI am writing to express my enthusiastic interest in the ${jobTitle || "Software Engineer"} position. With a solid foundation in technical problem-solving and application design, I am confident in my ability to contribute meaningfully to your team.\n\nMy background includes building projects, refining skills, and designing robust systems. In reviewing your job description, I noticed a strong emphasis on keywords related to:\n${jobDescription ? `* ${jobDescription.substring(0, 150)}...` : "* Collaborative application design\n* Core technology architecture"}\n\nMy academic background and technical projects align perfectly with these requirements. I am highly motivated to bring my skills to ${companyName || "your team"} and would welcome the opportunity to discuss my qualifications further in an interview.\n\nThank you for your time and consideration.\n\nSincerely,\n${userProfile?.name || "Alex Mercer"}`;
+    return mockLetter;
   }
 
   try {
-    return await ai.call(prompt, false);
+    const res = await ai.call(prompt, false);
+    if (!res || res.trim().length === 0) throw new Error("Empty letter");
+    return res;
   } catch (err) {
-    console.error("Cover letter AI generation failed:", err);
-    return `Dear Hiring Manager at ${companyName},\n\nI am thrilled to apply for the ${jobTitle} position. (Failed to load AI response, using backup template)`;
+    console.error("Cover letter AI generation failed. Returning mock fallback:", err);
+    return mockLetter;
   }
 }
 
@@ -550,7 +659,7 @@ export async function generatePlannerSchedule(careerTitle: string, duration: str
     }
   `;
 
-  if (ai.type === "mock") {
+  const mockPlanner = () => {
     const multiplier = duration === "Weekly" ? 1 : 4;
     return {
       tasks: [
@@ -576,21 +685,18 @@ export async function generatePlannerSchedule(careerTitle: string, duration: str
         }
       ]
     };
+  };
+
+  if (ai.type === "mock") {
+    return mockPlanner();
   }
 
   try {
     const rawRes = await ai.call(prompt, true);
     return JSON.parse(rawRes);
   } catch (err) {
-    console.error("AI Planner generation failed. Returning mock.", err);
-    return {
-      tasks: [
-        { title: "Fundamental Syntax Review", content: "Review basic programming structure and concepts.", deadlineDays: 7 },
-        { title: "Database & APIs Basics", content: "Learn basic schema models and REST endpoints.", deadlineDays: 14 },
-        { title: "Sample Capstone Project", content: "Build a basic project representing candidate skillsets.", deadlineDays: 21 },
-        { title: "Portfolio Prep", content: "Upload your code to GitHub and write a clean README doc.", deadlineDays: 28 }
-      ]
-    };
+    console.error("AI Planner generation failed. Returning mock fallback:", err);
+    return mockPlanner();
   }
 }
 
@@ -615,9 +721,8 @@ export async function predictCareerSuccessSuitability(profileData: any, assessme
     }
   `;
 
-  if (ai.type === "mock") {
+  const mockPredict = () => {
     let score = 70;
-    // Simple custom scoring logic
     const skills = profileData?.skills ? JSON.parse(profileData.skills) : [];
     if (skills.length > 3) score += 15;
     if (profileData?.education) score += 10;
@@ -628,18 +733,18 @@ export async function predictCareerSuccessSuitability(profileData: any, assessme
       suitability: score > 80 ? "High" : score > 60 ? "Medium" : "Low",
       explanation: `Your alignment with ${careerTitle} is very strong. Your skills in ${skills.join(", ") || "various domains"} show a great technical match. One potential bottleneck might be gaining enterprise project experience, but completing intermediate roadmap projects will bridge this gap.`
     };
+  };
+
+  if (ai.type === "mock") {
+    return mockPredict();
   }
 
   try {
     const rawRes = await ai.call(prompt, true);
     return JSON.parse(rawRes);
   } catch (err) {
-    console.error("AI Success predictor failed. Returning mock.", err);
-    return {
-      score: 75,
-      suitability: "Medium",
-      explanation: "You have a solid alignment score. Developing more technical projects and certifications will help boost your career readiness."
-    };
+    console.error("AI Success predictor failed. Returning mock fallback:", err);
+    return mockPredict();
   }
 }
 

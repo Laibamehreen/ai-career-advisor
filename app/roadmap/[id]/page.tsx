@@ -16,7 +16,7 @@ import {
   Calendar,
   Award,
   Terminal,
-  MessageSquareCheck,
+  MessageSquare,
   Printer,
   Loader2,
   CheckCircle,
@@ -395,7 +395,7 @@ export default function RoadmapPage({ params }: PageProps) {
                 {stages.advanced.interviewPrep && (
                   <div className="pt-4 border-t border-slate-200/5 space-y-3">
                     <h4 className="text-xs font-bold text-white print:text-black uppercase tracking-wider flex items-center gap-1.5">
-                      <MessageSquareCheck className="h-4.5 w-4.5 text-pink-400" />
+                      <MessageSquare className="h-4.5 w-4.5 text-pink-400" />
                       Interview Preparation Guidance
                     </h4>
                     <ul className="list-disc pl-5 space-y-1.5 text-xs text-slate-400 print:text-slate-600 leading-relaxed">

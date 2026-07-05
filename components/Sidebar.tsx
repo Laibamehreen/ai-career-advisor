@@ -25,6 +25,7 @@ import {
   Award,
   Briefcase,
   Users,
+  Globe,
 } from "lucide-react";
 
 export function Sidebar() {
@@ -43,6 +44,7 @@ export function Sidebar() {
     { name: "AI Cover Letter", href: "/cover-letter", icon: Sparkles },
     { name: "Interview Coach", href: "/interview", icon: UserCheck },
     { name: "Learning Planner", href: "/planner", icon: ListTodo },
+    { name: "Opportunities Hub", href: "/opportunities", icon: Globe },
     { name: "Credentials & Aid", href: "/credentials", icon: Award },
     { name: "Portfolio Projects", href: "/projects", icon: Briefcase },
     { name: "Community Forum", href: "/community", icon: Users },
